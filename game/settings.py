@@ -3,6 +3,7 @@ import pygame
 import random
 from entidades.enemy import Enemy
 from sistema.timer import Timer
+from entidades.vida import Vida
 
 #configuraçoes da tela
 screen = pygame.display.set_mode((800, 600))
@@ -21,8 +22,16 @@ def criarinimigos(qtd, world_rect, margin=100):
     
     return inimigos
 
+# cria curas temporarias
 
-
+def criarcuras(qtd, world_rect, margin=100):
+    curas = []
+    for _ in range(qtd):
+        x = random.randint(margin, world_rect.width - margin)
+        y = random.randint(margin, world_rect.width - margin)
+        curas.append(Vida(x, y))
+    
+    return curas
 
 #config dos temporizador
 pygame.init()
@@ -31,6 +40,9 @@ font = pygame.font.SysFont(None, 32)
 tempo = (140)
 gameover = False
 victory = False
+
+#configuraçoes da cura
+curaval = 1
 
 #configuraçoes do mapa
 WORLD_WIDTH = 2000

@@ -1,6 +1,6 @@
 import pygame
 import random
-from settings import screen, clock, FPS, camsize, victory, gameover, tempo, world_rect, WORLD_HEIGHT, WORLD_WIDTH, criarinimigos
+from settings import screen, clock, FPS, camsize, curaval, victory, gameover, tempo, world_rect, WORLD_HEIGHT, WORLD_WIDTH, criarinimigos, criarcuras
 from entidades.player import Player
 from sistema.camera import Camera
 from cenas.degubmap import draw_grid
@@ -30,6 +30,9 @@ inimigos = criarinimigos(10, world_rect)
 tx, ty = random_pos()
 train_rect = pygame.Rect(tx, ty, 80, 50)
 
+#curas temporarias
+curas = criarcuras(10, world_rect)
+
 while pygame.Vector2(tx, ty).distance_to(Player.pos) < 400:
     tx, ty = random_pos()
 
@@ -41,6 +44,10 @@ while running:
     for e in pygame.event.get():
         if e.type == pygame.QUIT:
             running = False
+        
+        if e.type == pygame.KEYDOWN:
+            if e.key == pygame.K_RETURN:
+                Player.shoot()
 
     #atualizaçoes
     Player.update(dt, screen_rect, camera, world_rect)
@@ -71,11 +78,17 @@ while running:
         e.update(dt, pygame.Vector2(Player.rect.center))
 
         if e.alive and Player.rect.colliderect(e.rect):
-            Player.takedamage(1)
+            Player.take_damage(1)
 
+    #checa a colisao do player coma cura
+    for c in curas:
+        if c.alive and Player.rect.colliderect(c.rect):
+            Player.securar(curaval)
+            c.alive = False
 
     Player.bullets = [b for b in Player.bullets if b.alive]
     inimigos = [e for e in inimigos if e.alive]
+    curas = [c for c in curas if c.alive]
 
 
     #desenhos
@@ -91,6 +104,9 @@ while running:
 
     for e in inimigos:
         e.draw(screen, camera, debug=True)
+
+    for c in curas:
+        c.draw(screen, camera)
 
     #desenhos de textos
     timer.draw(screen, font)

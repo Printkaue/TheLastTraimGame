@@ -1,6 +1,5 @@
 import pygame
 from entidades.bala import Bullet
-from sistema import camera
 
 class Player:
     def __init__(self, x, y):
@@ -17,64 +16,56 @@ class Player:
         self.hp = 5
         self.invul_time = 0
 
-        self.faccing = pygame.Vector2(1, 0)
+        self.facing = pygame.Vector2(1, 0)  # direção atual
 
-    def takedamage(self, dmg=1):
+    def securar(self, hellar):
+        if self.hp < 5:
+            self.hp += hellar
+
+    def take_damage(self, dmg=1):
         if self.invul_time <= 0:
             self.hp -= dmg
             self.invul_time = 1.0
 
-    def handle_input(self):
+    def handle_input(self, dt):
         keys = pygame.key.get_pressed()
-        direction = pygame.Vector2(0, 0)
+        move = pygame.Vector2(0, 0)
 
         if keys[pygame.K_w] or keys[pygame.K_UP]:
-            direction.y -= 1
+            move.y -= 1
         if keys[pygame.K_s] or keys[pygame.K_DOWN]:
-            direction.y += 1
+            move.y += 1
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            direction.x -= 1
+            move.x -= 1
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            direction.x += 1
+            move.x += 1
 
-        if direction.length_squared() > 0:
-            direction = direction.normalize()
+        if move.length_squared() > 0:
+            move = move.normalize()
+            self.facing = move
+            self.pos += move * self.speed * dt
 
-        return direction
-
-    def shoot(self, camera):
-        mouse_screen = pygame.Vector2(pygame.mouse.get_pos())
-        mouse_world = mouse_screen + camera.offset
-
-        center = pygame.Vector2(self.rect.center)
-        direction = mouse_world - center
-
-        if direction.length_squared() == 0:
+    def shoot(self):
+        if self.shoot_timer > 0:
             return
 
-        self.bullets.append(Bullet(center, direction))
+        center = pygame.Vector2(self.rect.center)
+        self.bullets.append(Bullet(center, self.facing))
+        self.shoot_timer = self.shoot_cooldown
 
     def update(self, dt, screen_rect, camera, world_rect):
         self.shoot_timer -= dt
 
-        direction = self.handle_input()
-        self.pos += direction * self.speed * dt
-        self.rect.topleft = self.pos
+        self.handle_input(dt)
 
         self.pos.x = max(0, min(self.pos.x, world_rect.width - self.size))
         self.pos.y = max(0, min(self.pos.y, world_rect.height - self.size))
         self.rect.topleft = self.pos
 
-
-        mouse_pressed = pygame.mouse.get_pressed()
-        if mouse_pressed[0] and self.shoot_timer <= 0:
-            self.shoot(camera)
-            self.shoot_timer = self.shoot_cooldown
-
         for b in self.bullets:
-
             b.update(dt, world_rect)
-            self.bullets = [b for b in self.bullets if b.alive]
+
+        self.bullets = [b for b in self.bullets if b.alive]
 
         if self.invul_time > 0:
             self.invul_time -= dt
@@ -82,7 +73,6 @@ class Player:
     def draw(self, screen, camera):
         pygame.draw.rect(screen, (255, 255, 255), camera.apply(self.rect))
 
-        #Desenha as balas
         for b in self.bullets:
             pygame.draw.circle(
                 screen,
