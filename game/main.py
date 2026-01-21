@@ -10,6 +10,9 @@ from cenas.loser import draw_loser
 
 pygame.init()
 pygame.font.init()
+
+pygame.display.set_caption("The Last Train of Midnight")
+
 running = True
 
 state = "menu"
