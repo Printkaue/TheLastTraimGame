@@ -49,9 +49,13 @@ class Player:
         if self.shoot_timer > 0:
             return
 
+        if self.facing.length_squared() == 0:
+            return 
+
         center = pygame.Vector2(self.rect.center)
         self.bullets.append(Bullet(center, self.facing))
         self.shoot_timer = self.shoot_cooldown
+
 
     def update(self, dt, screen_rect, camera, world_rect):
         self.shoot_timer -= dt

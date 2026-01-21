@@ -37,7 +37,7 @@ def criarcuras(qtd, world_rect, margin=100):
 pygame.init()
 pygame.font.init()
 font = pygame.font.SysFont(None, 32)
-tempo = (140)
+tempo = (135) #140
 gameover = False
 victory = False
 
@@ -45,6 +45,6 @@ victory = False
 curaval = 1
 
 #configuraçoes do mapa
-WORLD_WIDTH = 2000
-WORLD_HEIGHT = 2000
+WORLD_WIDTH = 3100
+WORLD_HEIGHT = 3100
 world_rect = pygame.Rect(0, 0, WORLD_WIDTH, WORLD_HEIGHT)

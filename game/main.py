@@ -1,121 +1,58 @@
 import pygame
 import random
-from settings import screen, clock, FPS, camsize, curaval, victory, gameover, tempo, world_rect, WORLD_HEIGHT, WORLD_WIDTH, criarinimigos, criarcuras
-from entidades.player import Player
-from sistema.camera import Camera
-from cenas.degubmap import draw_grid
-from sistema.timer import Timer
+from time import sleep
+from settings import screen, clock, FPS, font
+from cenas.game import Game
+from cenas.game import reset_game
+from cenas.menuu import draw_menu
+from cenas.victory import draw_victory
+from cenas.loser import draw_loser
 
 pygame.init()
 pygame.font.init()
 running = True
 
-Player = Player(200, 200)
-timer = Timer(tempo)
-font = pygame.font.SysFont(None, 32)
-screen_rect = screen.get_rect()
-camera = Camera(camsize)
-
-
-
-def random_pos(margin=100):
-    x = random.randint(margin, world_rect.width - margin)
-    y = random.randint(margin, world_rect.height - margin)
-    return x, y
-
-#inimigos temporarios
-inimigos = criarinimigos(10, world_rect)
-
-#trem temporario
-tx, ty = random_pos()
-train_rect = pygame.Rect(tx, ty, 80, 50)
-
-#curas temporarias
-curas = criarcuras(10, world_rect)
-
-while pygame.Vector2(tx, ty).distance_to(Player.pos) < 400:
-    tx, ty = random_pos()
-
-train_rect.topleft = (tx, ty)
+state = "menu"
 
 while running:
-    dt = clock.tick(FPS)/1000
+    dt = clock.tick(FPS) / 1000
 
-    for e in pygame.event.get():
-        if e.type == pygame.QUIT:
+    screen.fill((0, 0, 0))
+
+    if state == "menu":
+        new_state = draw_menu(screen, font)
+        if new_state == "quit":
             running = False
         
-        if e.type == pygame.KEYDOWN:
-            if e.key == pygame.K_RETURN:
-                Player.shoot()
+        state = new_state
 
-    #atualizaçoes
-    Player.update(dt, screen_rect, camera, world_rect)
-    camera.follow(Player.rect, screen_rect)
+    elif state == "game":
+        new_state = Game(dt)
+        if new_state == "quit":
+            running = False
+        else:
+            state = new_state
 
-    for e in inimigos:
-        e.update(dt, pygame.Vector2(Player.rect.center))
+    elif state == "victory":
+        new_state = draw_victory(screen, font)
+        if new_state == "quit":
+            running = False
+        else:
+            if new_state == "menu":
+                reset_game()
+        
+        state = new_state
 
-    if not gameover and not victory:
-        timer.update(dt)
+    elif state == "loser":
+        new_state = draw_loser(screen, font)
+        if new_state == 'quit':
+            running = False
+        else:
+            if new_state == "menu":
+                reset_game()
 
-        if timer.is_over():
-            victory = True
-
-    if Player.rect.colliderect(train_rect):
-        victory = True
-
-    #checa a colizão dos inimmigos com as balas
-    for b in Player.bullets:
-        for e in inimigos:
-            if b.rect.colliderect(e.rect):
-                b.alive = False
-                e.tekedamge(1)
-                e.aggro = True
-
-    #checa a colizao dos inimigos com o Player
-    for e in inimigos:
-        e.update(dt, pygame.Vector2(Player.rect.center))
-
-        if e.alive and Player.rect.colliderect(e.rect):
-            Player.take_damage(1)
-
-    #checa a colisao do player coma cura
-    for c in curas:
-        if c.alive and Player.rect.colliderect(c.rect):
-            Player.securar(curaval)
-            c.alive = False
-
-    Player.bullets = [b for b in Player.bullets if b.alive]
-    inimigos = [e for e in inimigos if e.alive]
-    curas = [c for c in curas if c.alive]
-
-
-    #desenhos
-    screen.fill((0, 0, 0))
-    draw_grid(screen, camera, 32)
-
-    #visualizaçao do mapa
-    world_screen_rect = camera.apply(world_rect)
-    pygame.draw.rect(screen, (255, 255, 255), world_screen_rect, 2)
-
-    Player.draw(screen, camera)
-    pygame.draw.rect(screen, (100, 200, 255), camera.apply(train_rect))
-
-    for e in inimigos:
-        e.draw(screen, camera, debug=True)
-
-    for c in curas:
-        c.draw(screen, camera)
-
-    #desenhos de textos
-    timer.draw(screen, font)
-
-    hp_text = font.render(f"Vida: {Player.hp}", True, (255, 255, 255))
-    screen.blit(hp_text, (10, 40))
-
+        state = new_state
 
     pygame.display.flip()
-    clock.tick(FPS)
 
 pygame.quit()
